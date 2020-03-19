@@ -1,0 +1,170 @@
+// VerilogA for FeFET, FeFET, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+`define PI 3.14159265358979323846
+
+module FeFET(vdrain, vgate, vsource, vbody);
+inout vdrain, vgate, vsource, vbody;
+electrical vdrain, vgate, vsource, vbody;
+    
+parameter real width = 1u from (0:inf);
+parameter real length = 1u from (0:inf);
+parameter real vfb = 0.5 from [0:inf);
+parameter real tfe = 0.8u from (0:inf);
+parameter real til = 0.1u from (0:inf);
+parameter real na = 3e17 from (0:inf);
+parameter real epiv = 8.85e-14 from (0:inf);
+parameter real a = 8 from (0:inf);
+parameter real b = 2 from (0:inf);
+parameter real p = 0.6775 from (0:inf);
+parameter real q = 0.8115 from (0:inf);
+parameter real Pr = 18 from (0:inf);
+parameter real tauo = 1e-7 from (0:inf);
+parameter real alpha = 3.2975 from (0:inf);
+parameter real beta = 2 from (0:inf);
+parameter real epife = 50 from (0:inf);
+parameter real TIMELIMIT = 1e9 from (0:inf);
+parameter integer ndom = 2000 from (0:inf);
+
+   real vds, 
+      vgs, 
+      vbs, 
+      vbd, 
+      vgb,
+      vgd,
+      vth, 
+      id, 
+      ibs, 
+      ibd,
+      qgb,
+      qgs,
+      qgd,
+      qbd,
+      qbs;
+   real vswitchlimit[0:ndom-1], vswitch[0:ndom-1], r_Ea[0:ndom-1], f_Ea[0:ndom-1], r_voff[0:ndom-1], h[0:ndom-1], hpre[0:ndom-1], St[0:ndom-1], taus[0:ndom-1];
+   real vpre, Pcurr, time_pre, srand;
+   real f_distr[0:9999], l[0:9999], Ea, k, E, sum, pswi;
+   integer seed, i, j, m, flag;
+   
+   analog function real gamma_function;
+      input x;
+      real x, fact, c[0:19], accm;
+      integer i;
+      begin
+         fact = 1.0;
+         c[0] = sqrt(2.0 * `PI);
+         for (i = 1; i < 20; i = i + 1) begin
+            c[i] = exp(20-i) * pow(20-i, i-0.5) / fact;
+            fact = -fact * i;
+         end
+         accm = c[0];
+         for (i = 0; i < 20; i = i + 1) begin
+            accm = accm + c[i] / (x + i);
+         end
+         accm = accm * exp(-(x+20)) * pow(x+20, x+0.5);
+         gamma_function = accm/x;
+      end
+   endfunction
+
+   analog function real beta_function;
+      input x, y;
+      real x, y;
+      begin
+         beta_function = gamma_function(x) * gamma_function(y) / gamma_function(x + y);
+      end
+   endfunction
+      
+   analog begin
+
+      @ ( initial_step or initial_step("static") ) begin
+         seed = 20;
+         time_pre = $abstime;
+         for (i = 0; i < ndom; i = i + 1) begin
+            Ea = i * 8.0 / ndom;
+            f_Ea[i] = (a/b) * pow(Ea/b, a*p-1) / beta_function(p,q) / pow((1 + pow(Ea/b, a)), p+q);
+            r_voff[i] = $rdist_normal(seed, 0, vfb);
+			// $display("r_voff[%d] = %g\n", i, r_voff[i]);
+            St[i] = 1;
+            h[i] = 0;
+         end
+         for (i = 0; i < 10000; i = i + 1) begin
+            k = ndom / 10000.0 * i;
+            m = floor(k);
+            if (m >= ndom - 1) begin
+               l[i] = f_Ea[ndom - 1];
+            end else begin 
+               l[i] = f_Ea[m] * (1 + m - k) + f_Ea[m + 1] * (k - m);
+            end
+            if (i >= 1) begin
+               f_distr[i] = f_distr[i - 1] + (l[i] + l[i - 1]) * 4.0 / 10000.0;
+            end else begin
+               f_distr[i] = 0;
+            end
+			// $display("f_distr[%d] = %g\n", i, f_distr[i]);
+         end
+         for (i = 0; i < 10000; i = i + 1) begin
+            f_distr[i] = f_distr[i] / f_distr[9999];
+         end
+         for (i = 0; i < ndom; i = i + 1) begin
+            E = $rdist_uniform(seed, 0, 1);
+			r_Ea[i] = 0;
+            flag = 0;
+            for (j = 1; j < 10000; j = j + 1) begin
+               if (f_distr[j] > E && !flag) begin
+                  r_Ea[i] = j * 8.0 / 10000.0;
+                  flag = 1;
+               end
+            end
+			// $display("E = %g, r_Ea[%d] = %g\n", E, i, r_Ea[i]);
+         end
+      end
+
+      vds = V(vdrain, vsource);
+      vgs = V(vgate, vsource);
+      vgb = V(vgate, vbody);
+      vgd = V(vgate, vdrain);
+      vbs = V(vbody, vsource);
+      vbd = V(vbody, vdrain);
+      
+      sum = 0;
+      for (i = 0; i < ndom; i = i + 1) begin
+         vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
+         vswitch[i] = (vgb + vpre) / 2.0 - r_voff[i];
+         taus[i] = tauo * exp(pow(r_Ea[i]/max(abs(vswitch[i]), vswitchlimit[i]), alpha));
+         h[i] = h[i] + ($abstime - time_pre) * (vswitch[i] * St[i] <= 0 ? 1.0 : -1.0) / taus[i];
+         
+         if (hpre[i] > h[i]) begin
+            pswi = -0.1;
+         end else begin
+            pswi = 1 - exp(pow(hpre[i], beta) - pow(h[i], beta));
+			// $display("%g\n", pswi);
+         end
+		
+         if (h[i] < 0 || h[i] > 0.5) begin
+            h[i] = 0;
+         end;
+         
+         srand = $rdist_uniform(seed, 0, 1);
+         
+         if (pswi > srand) begin
+            St[i] = -St[i];
+         end
+         
+         hpre[i] = h[i];
+         sum = sum + St[i];
+      end
+      
+      vpre = vgb;
+      time_pre = $abstime;
+      Pcurr = Pr * sum / ndom + 1e6 * vgb * epife * epiv / tfe;
+
+      I(vdrain, vsource) <+ Pcurr;
+      I(vbody, vdrain)   <+ 0;
+      I(vbody, vsource)  <+ 0;
+      I(vgate, vbody)    <+ 0;
+      I(vgate, vsource)  <+ 0;
+      I(vgate, vdrain)   <+ 0;
+   end
+endmodule
