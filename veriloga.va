@@ -3,8 +3,6 @@
 `include "constants.vams"
 `include "disciplines.vams"
 
-`define PI 3.14159265358979323846
-
 module FeFET(vdrain, vgate, vsource, vbody);
 inout vdrain, vgate, vsource, vbody;
 electrical vdrain, vgate, vsource, vbody;
@@ -54,7 +52,7 @@ parameter integer ndom = 2000 from (0:inf);
       integer i;
       begin
          fact = 1.0;
-         c[0] = sqrt(2.0 * `PI);
+         c[0] = sqrt(2.0 * `M_PI);
          for (i = 1; i < 20; i = i + 1) begin
             c[i] = exp(20-i) * pow(20-i, i-0.5) / fact;
             fact = -fact * i;
@@ -85,7 +83,7 @@ parameter integer ndom = 2000 from (0:inf);
             Ea = i * 8.0 / ndom;
             f_Ea[i] = (a/b) * pow(Ea/b, a*p-1) / beta_function(p,q) / pow((1 + pow(Ea/b, a)), p+q);
             r_voff[i] = $rdist_normal(seed, 0, vfb);
-			// $display("r_voff[%d] = %g\n", i, r_voff[i]);
+			   // $display("r_voff[%d] = %g\n", i, r_voff[i]);
             St[i] = 1;
             h[i] = 0;
          end
@@ -117,7 +115,7 @@ parameter integer ndom = 2000 from (0:inf);
                   flag = 1;
                end
             end
-			// $display("E = %g, r_Ea[%d] = %g\n", E, i, r_Ea[i]);
+			// $display("E = %g, r_Ea[%d] = %g, r_voff[%d] = %g\n", E, i, r_Ea[i], i, r_Ea[i]);
          end
       end
 
@@ -133,7 +131,7 @@ parameter integer ndom = 2000 from (0:inf);
          vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
          vswitch[i] = (vgb + vpre) / 2.0 - r_voff[i];
          taus[i] = tauo * exp(pow(r_Ea[i]/max(abs(vswitch[i]), vswitchlimit[i]), alpha));
-         h[i] = h[i] + ($abstime - time_pre) * (vswitch[i] * St[i] <= 0 ? 1.0 : -1.0) / taus[i];
+         h[i] = hpre[i] + ($abstime - time_pre) * (vswitch[i] * St[i] <= 0 ? 1.0 : -1.0) / taus[i];
          
          if (hpre[i] > h[i]) begin
             pswi = -0.1;
@@ -142,7 +140,7 @@ parameter integer ndom = 2000 from (0:inf);
 			// $display("%g\n", pswi);
          end
 		
-         if (h[i] < 0 || h[i] > 0.5) begin
+         if (h[i] < 0 || pswi > 0.5) begin
             h[i] = 0;
          end;
          
