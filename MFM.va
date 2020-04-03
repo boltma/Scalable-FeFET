@@ -107,7 +107,7 @@ parameter integer ndom = 2000 from (0:inf);
          end
          for (i = 0; i < ndom; i = i + 1) begin
             E = $rdist_uniform(seed, 0, 1);
-			r_Ea[i] = 0;
+			   r_Ea[i] = 0;
             flag = 0;
             for (j = 1; j < 10000; j = j + 1) begin
                if (f_distr[j] > E && !flag) begin
@@ -115,7 +115,8 @@ parameter integer ndom = 2000 from (0:inf);
                   flag = 1;
                end
             end
-			// $display("E = %g, r_Ea[%d] = %g, r_voff[%d] = %g\n", E, i, r_Ea[i], i, r_Ea[i]);
+			   // $display("E = %g, r_Ea[%d] = %g, r_voff[%d] = %g\n", E, i, r_Ea[i], i, r_Ea[i]);
+            vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
          end
       end
 
@@ -128,7 +129,6 @@ parameter integer ndom = 2000 from (0:inf);
       
       sum = 0;
       for (i = 0; i < ndom; i = i + 1) begin
-         vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
          vswitch[i] = (vgb + vpre) / 2.0 - r_voff[i];
          taus[i] = tauo * exp(pow(r_Ea[i]/max(abs(vswitch[i]), vswitchlimit[i]), alpha));
          h[i] = hpre[i] + ($abstime - time_pre) * (vswitch[i] * St[i] <= 0 ? 1.0 : -1.0) / taus[i];
