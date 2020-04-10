@@ -142,7 +142,7 @@ parameter integer ndom = 2000 from (0:inf);
 		
          if (h[i] < 0 || pswi > 0.5) begin
             h[i] = 0;
-         end;
+         end
          
          srand = $rdist_uniform(seed, 0, 1);
          
