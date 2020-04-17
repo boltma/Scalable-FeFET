@@ -119,7 +119,7 @@ parameter integer ndom = 20 from (0:inf);
             phix = phix - f / (df - f * ddf / (2 * df));
             cnt = cnt + 1;
             F_D = (exp(-1.0 * phix / Vt) + phix / Vt - 1 ) + pow(n_i/Na, 2) * exp(- VCB / Vt) * ( exp( phix / Vt) - phix / Vt - 1 - (pow(phix / Vt, 2) / (pow(phi / Vt, 2) + 2)) );
-            if (F_D >= -1e-9) F_D = sqrt(F_D);
+            if (F_D >= -1e-9) F_D = sqrt(abs(F_D));
             else F_D = 0;
             err = abs(sqrt(2) * (phix > 0 ? 1.0 : -1.0) * epis * epiv * Vt / LD * F_D / Cox + phix - (VGB - VFB));
          end
@@ -283,7 +283,7 @@ parameter integer ndom = 20 from (0:inf);
 		
          if (h[i] < 0 || pswi > srand[i]) begin
             h[i] = 0;
-         end;
+         end
          
          if (pswi > srand[i]) begin
             St[i] = -St[i];
