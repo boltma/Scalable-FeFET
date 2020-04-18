@@ -26,7 +26,6 @@ parameter real alpha = 3.0 from (0:inf);
 parameter real beta = 2 from (0:inf);
 parameter real epife = 28 from (0:inf);
 parameter real miu = 50 from (0:inf);
-parameter real Na = 3e17 from (0:inf);
 parameter real TIMELIMIT = 1e9 from (0:inf);
 parameter integer ndom = 20 from (0:inf);
 
@@ -79,16 +78,16 @@ parameter integer ndom = 20 from (0:inf);
    endfunction
    
    analog function real phi;
-      input tox, Na, Cox, gamma, W, L, VGB, VFB, VCB;
-      real tox, Na, Cox, gamma, W, L, VGB, VFB, VCB;
+      input tox, Cox, gamma, W, L, VGB, VFB, VCB;
+      real tox, Cox, gamma, W, L, VGB, VFB, VCB;
       real n_i, Vt, LD, phib, alpha_0, phix, phisat, ug, uc, ec, K, e1, e2, x, y, err, F_D;
       real qg, f, df, ddf;
       integer cnt;
       begin
          n_i = 5.29 * 1e19 * pow(($temperature / 300), 2.54) * exp(-6726 / $temperature);
          Vt = `P_K * $temperature / `P_Q;
-         LD = sqrt(Vt * epis * epiv / Na / `P_Q);
-         phib = Vt * ln(Na /n_i);     
+         LD = sqrt(Vt * epis * epiv / na / `P_Q);
+         phib = Vt * ln(na /n_i);     
          phix = 0;
          alpha_0 = -gamma * sqrt(Vt);
          ug = VGB - VFB;
@@ -118,7 +117,7 @@ parameter integer ndom = 20 from (0:inf);
             ddf = 2 / pow(gamma, 2) - (e1 + e2) / Vt;
             phix = phix - f / (df - f * ddf / (2 * df));
             cnt = cnt + 1;
-            F_D = (exp(-1.0 * phix / Vt) + phix / Vt - 1 ) + pow(n_i/Na, 2) * exp(- VCB / Vt) * ( exp( phix / Vt) - phix / Vt - 1 - (pow(phix / Vt, 2) / (pow(phi / Vt, 2) + 2)) );
+            F_D = (exp(-1.0 * phix / Vt) + phix / Vt - 1 ) + pow(n_i/na, 2) * exp(- VCB / Vt) * ( exp( phix / Vt) - phix / Vt - 1 - (pow(phix / Vt, 2) / (pow(phi / Vt, 2) + 2)) );
             if (F_D >= -1e-9) F_D = sqrt(abs(F_D));
             else F_D = 0;
             err = abs(sqrt(2) * (phix > 0 ? 1.0 : -1.0) * epis * epiv * Vt / LD * F_D / Cox + phix - (VGB - VFB));
@@ -175,11 +174,11 @@ parameter integer ndom = 20 from (0:inf);
             r_voff[i] = $rdist_normal(seed, 0, vfb);
             r_Ea[i] = $rdist_normal(seed, a, b);
             vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
-            St[i] = 1;
+            St[i] = ($random(seed) % 2) ? 1 : -1;
             h[i] = 0;
          end
          Cox = epio * epiv / til;
-         gamma = sqrt(2 * `P_Q * Na * epis * epiv) / Cox;
+         gamma = sqrt(2 * `P_Q * na * epis * epiv) / Cox;
       end
 	
       vds = V(vdrain, vsource);
@@ -224,8 +223,8 @@ parameter integer ndom = 20 from (0:inf);
             
             sum = sum + St_temp[i];
          end
-         phis = phi(til, Na, Cox, gamma, width, length, vgb - left, vfb, -vbs);
-         phid = phi(til, Na, Cox, gamma, width, length, vgb - left, vfb, -vbd);
+         phis = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbs);
+         phid = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbd);
          
          Pleft = Pr * sum / ndom + 1e6 * left * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - left, vfb);
          // Todo: Add weight for domains
@@ -255,8 +254,8 @@ parameter integer ndom = 20 from (0:inf);
             
             sum = sum + St_temp[i];
          end
-         phis = phi(til, Na, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
-         phid = phi(til, Na, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
+         phis = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
+         phid = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
          
          Pmid = Pr * sum / ndom + 1e6 * vfe * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - vfe, vfb);
          
@@ -295,8 +294,8 @@ parameter integer ndom = 20 from (0:inf);
       
       vpre = vfe;
       time_pre = $abstime;
-      phis = phi(til, Na, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
-      phid = phi(til, Na, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
+      phis = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
+      phid = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
       id = ID(til, phis, phid, Cox, gamma, width, length, vgb - vfe, vfb);
       Pcurr = Pr * sum / ndom + 1e6 * (vgb - vfe) * epife * epiv / tfe;
 
