@@ -147,8 +147,8 @@ parameter integer ndom = 20 from (0:inf);
    endfunction
       
    analog function real ID;
-      input phis, phid, Cox, miu, gamma, W, L, VGB, VFB;
-      real phis, phid, Cox, miu, gamma, W, L, VGB, VFB;
+      input phis, phid, Cox, gamma, W, L, VGB, VFB;
+      real phis, phid, Cox, gamma, W, L, VGB, VFB;
       real Vt, phim, dphi, Q, alpha_0, qim, H;
       begin
          Vt = `P_K * $temperature / `P_Q;
@@ -226,7 +226,7 @@ parameter integer ndom = 20 from (0:inf);
          phis = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbs);
          phid = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbd);
          
-         Pleft = Pr * sum / ndom + 1e6 * left * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - left, vfb);
+         Pleft = Pr * sum / ndom + 1e6 * left * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - left, -vfb);
          // Todo: Add weight for domains
          
          // mid compute
@@ -254,10 +254,10 @@ parameter integer ndom = 20 from (0:inf);
             
             sum = sum + St_temp[i];
          end
-         phis = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
-         phid = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
+         phis = phi(til, Cox, gamma, width, length, vgb - vfe, -vfb, -vbs);
+         phid = phi(til, Cox, gamma, width, length, vgb - vfe, -vfb, -vbd);
          
-         Pmid = Pr * sum / ndom + 1e6 * vfe * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - vfe, vfb);
+         Pmid = Pr * sum / ndom + 1e6 * vfe * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - vfe, -vfb);
          
          if (Pmid * Pleft <= 0) begin
             right = vfe;
@@ -294,9 +294,9 @@ parameter integer ndom = 20 from (0:inf);
       
       vpre = vfe;
       time_pre = $abstime;
-      phis = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbs);
-      phid = phi(til, Cox, gamma, width, length, vgb - vfe, vfb, -vbd);
-      id = ID(til, phis, phid, Cox, gamma, width, length, vgb - vfe, vfb);
+      phis = phi(til, Cox, gamma, width, length, vgb - vfe, -vfb, -vbs);
+      phid = phi(til, Cox, gamma, width, length, vgb - vfe, -vfb, -vbd);
+      id = ID(phis, phid, Cox, gamma, width, length, vgb - vfe, -vfb);
       Pcurr = Pr * sum / ndom + 1e6 * (vgb - vfe) * epife * epiv / tfe;
 
       I(vdrain, vsource) <+ id;
