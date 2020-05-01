@@ -9,7 +9,7 @@ electrical vdrain, vgate, vsource, vbody;
     
 parameter real width = 1u from (0:inf);
 parameter real length = 1u from (0:inf);
-parameter real vfb = 0 from [0:inf);
+parameter real vfb = 0 from (-inf:inf);
 parameter real tfe = 0.8u from (0:inf);
 parameter real til = 0.1u from (0:inf);
 parameter real na = 3e17 from (0:inf);
@@ -171,7 +171,7 @@ parameter integer ndom = 20 from (0:inf);
          seed = 20;
          time_pre = $abstime;
          for (i = 0; i < ndom; i = i + 1) begin
-            r_voff[i] = $rdist_normal(seed, 0, vfb);
+            r_voff[i] = $rdist_normal(seed, 0, abs(vfb)) * (vfb <= 0 ? 1.0 : -1.0);
             r_Ea[i] = $rdist_normal(seed, a, b);
             vswitchlimit[i] = r_Ea[i]/pow(ln(TIMELIMIT/tauo), 1.0/alpha);
             St[i] = ($random(seed) % 2) ? 1 : -1;
@@ -223,8 +223,8 @@ parameter integer ndom = 20 from (0:inf);
             
             sum = sum + St_temp[i];
          end
-         phis = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbs);
-         phid = phi(til, Cox, gamma, width, length, vgb - left, vfb, -vbd);
+         phis = phi(til, Cox, gamma, width, length, vgb - left, -vfb, -vbs);
+         phid = phi(til, Cox, gamma, width, length, vgb - left, -vfb, -vbd);
          
          Pleft = Pr * sum / ndom + 1e6 * left * epife * epiv / tfe - 1e6 * Qmos(til, phis, phid, Cox, gamma, width, length, vgb - left, -vfb);
          // Todo: Add weight for domains
