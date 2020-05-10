@@ -1,11 +1,11 @@
-// VerilogA for FeFET, FeFET, veriloga
+// VerilogA for MFM, veriloga
 
 `include "constants.vams"
 `include "disciplines.vams"
 
-module FeFET(vdrain, vgate, vsource, vbody);
-inout vdrain, vgate, vsource, vbody;
-electrical vdrain, vgate, vsource, vbody;
+module MFM(vgate, vbody);
+inout vgate, vbody;
+electrical vgate, vbody;
     
 parameter real width = 1u from (0:inf);
 parameter real length = 1u from (0:inf);
@@ -26,23 +26,9 @@ parameter real epife = 50 from (0:inf);
 parameter real TIMELIMIT = 1e9 from (0:inf);
 parameter integer ndom = 2000 from (0:inf);
 
-   real vds, 
-      vgs, 
-      vbs, 
-      vbd, 
-      vgb,
-      vgd,
-      vth, 
-      id, 
-      ibs, 
-      ibd,
-      qgb,
-      qgs,
-      qgd,
-      qbd,
-      qbs;
+   real vgb, igb;
    real vswitchlimit[0:ndom-1], vswitch[0:ndom-1], r_Ea[0:ndom-1], f_Ea[0:ndom-1], r_voff[0:ndom-1], h[0:ndom-1], hpre[0:ndom-1], St[0:ndom-1], taus[0:ndom-1];
-   real vpre, Pcurr, time_pre, srand;
+   real vpre, Pcurr, time_pre, srand[0:ndom-1];
    real f_distr[0:9999], l[0:9999], Ea, k, E, sum, pswi;
    integer seed, i, j, m, flag;
    
@@ -120,12 +106,7 @@ parameter integer ndom = 2000 from (0:inf);
          end
       end
 
-      vds = V(vdrain, vsource);
-      vgs = V(vgate, vsource);
       vgb = V(vgate, vbody);
-      vgd = V(vgate, vdrain);
-      vbs = V(vbody, vsource);
-      vbd = V(vbody, vdrain);
       
       sum = 0;
       for (i = 0; i < ndom; i = i + 1) begin
@@ -139,14 +120,14 @@ parameter integer ndom = 2000 from (0:inf);
             pswi = 1 - exp(pow(hpre[i], beta) - pow(h[i], beta));
 			// $display("%g\n", pswi);
          end
+         
+         srand[i] = $rdist_uniform(seed, 0, 1);
 		
-         if (h[i] < 0 || pswi > 0.5) begin
+         if (h[i] < 0 || pswi > srand[i]) begin
             h[i] = 0;
          end
          
-         srand = $rdist_uniform(seed, 0, 1);
-         
-         if (pswi > srand) begin
+         if (pswi > srand[i]) begin
             St[i] = -St[i];
          end
          
@@ -157,12 +138,8 @@ parameter integer ndom = 2000 from (0:inf);
       vpre = vgb;
       time_pre = $abstime;
       Pcurr = Pr * sum / ndom + 1e6 * vgb * epife * epiv / tfe;
+      igb = width * length * ddt(Pcurr);
 
-      I(vdrain, vsource) <+ Pcurr;
-      I(vbody, vdrain)   <+ 0;
-      I(vbody, vsource)  <+ 0;
-      I(vgate, vbody)    <+ 0;
-      I(vgate, vsource)  <+ 0;
-      I(vgate, vdrain)   <+ 0;
+      I(vgate, vbody)    <+ igb;
    end
 endmodule
