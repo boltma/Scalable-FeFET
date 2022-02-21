@@ -28,6 +28,7 @@ parameter real epife = 28 from (0:inf);
 parameter real miu = 50 from (0:inf);
 parameter real TIMELIMIT = 1e9 from (0:inf);
 parameter integer ndom = 20 from (0:inf);
+parameter integer seed0 = 1 from (0:inf);
 
    real vds, 
       vgs, 
@@ -168,7 +169,7 @@ parameter integer ndom = 20 from (0:inf);
    analog begin
 
       @ ( initial_step or initial_step("static") ) begin
-         seed = 20;
+		 seed = seed0;
          time_pre = $abstime;
          for (i = 0; i < ndom; i = i + 1) begin
             r_voff[i] = $rdist_normal(seed, 0, abs(vfb)) * (vfb <= 0 ? 1.0 : -1.0);

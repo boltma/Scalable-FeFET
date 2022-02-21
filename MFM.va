@@ -64,13 +64,14 @@ parameter integer ndom = 2000 from (0:inf);
 
       @ ( initial_step or initial_step("static") ) begin
          seed = 20;
+         vpre = 0;
          time_pre = $abstime;
          for (i = 0; i < ndom; i = i + 1) begin
             Ea = i * 8.0 / ndom;
             f_Ea[i] = (a/b) * pow(Ea/b, a*p-1) / beta_function(p,q) / pow((1 + pow(Ea/b, a)), p+q);
             r_voff[i] = $rdist_normal(seed, 0, vfb);
 			   // $display("r_voff[%d] = %g\n", i, r_voff[i]);
-            St[i] = 1;
+            St[i] = ($random(seed) % 2) ? 1 : -1;
             h[i] = 0;
          end
          for (i = 0; i < 10000; i = i + 1) begin

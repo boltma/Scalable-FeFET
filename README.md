@@ -2,11 +2,11 @@
 
 ## Parameters
 
-- width = 1u // channel width
-- length = 1u // channel length
-- vfb = 0 // fermi-bulk voltage
-- tfe = 0.8u // ferroelectric thickness
-- til = 0.1u // interlayer thickness
+- width = 1u // channel width (cm)
+- length = 1u // channel length (cm)
+- vfb = 0 // flat band voltage
+- tfe = 0.8u // ferroelectric thickness (cm)
+- til = 0.1u // interlayer thickness (cm)
 - na = 3e17 // substrate doping
 - epiv = 8.85e-14 // Vacuum permittivity
 - epis = 11.8 // relative permittivity of silicon
@@ -21,5 +21,6 @@
 - beta = 2 // parameter for switching probability
 - epife = 28 // relative permittivity of ferroelectric
 - miu = 50 // MOSFET surface mobility
-- TIMELIMIT = 1e9 // time limit of swtching
-- ndom = 20  // number of domains
+- TIMELIMIT = 1e9 // time limit of switching
+- ndom = 20 // number of domains
+- seed0 = 1 // seed for random number
