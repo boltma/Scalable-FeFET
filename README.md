@@ -1,5 +1,9 @@
 # FeFET Model
 
+## Reference
+
+S. Deng et al., "A Comprehensive Model for Ferroelectric FET Capturing the Key Behaviors: Scalability, Variation, Stochasticity, and Accumulation," 2020 IEEE Symposium on VLSI Technology, 2020, pp. 1-2, doi: 10.1109/VLSITechnology18217.2020.9265014.
+
 ## Parameters
 
 - width = 1u // channel width (cm)
@@ -24,3 +28,4 @@
 - TIMELIMIT = 1e9 // time limit of switching
 - ndom = 20 // number of domains
 - seed0 = 1 // seed for random number
+- 
